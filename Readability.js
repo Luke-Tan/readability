@@ -164,6 +164,7 @@ Readability.prototype = {
     // See: https://schema.org/Article
     jsonLdArticleTypes:
       /^Article|AdvertiserContentArticle|NewsArticle|AnalysisNewsArticle|AskPublicNewsArticle|BackgroundNewsArticle|OpinionNewsArticle|ReportageNewsArticle|ReviewNewsArticle|Report|SatiricalArticle|ScholarlyArticle|MedicalScholarlyArticle|SocialMediaPosting|BlogPosting|LiveBlogPosting|DiscussionForumPosting|TechArticle|APIReference$/,
+    antiCrawling: /easylockdown/i,
   },
 
   UNLIKELY_ROLES: [
@@ -1054,7 +1055,7 @@ Readability.prototype = {
 
         var matchString = node.className + " " + node.id;
 
-        if (!this._isProbablyVisible(node)) {
+        if (!this._isProbablyVisible(node, matchString)) {
           this.log("Removing hidden node - " + matchString);
           node = this._removeAndGetNext(node);
           continue;
@@ -2527,8 +2528,11 @@ Readability.prototype = {
     this._flags = this._flags & ~flag;
   },
 
-  _isProbablyVisible: function (node) {
+  _isProbablyVisible: function (node, matchString) {
     // Have to null-check node.style and node.className.indexOf to deal with SVG and MathML nodes.
+    if (this.REGEXPS.antiCrawling.test(matchString)) {
+      return true;
+    }
     return (
       (!node.style || node.style.display != "none") &&
       !node.hasAttribute("hidden") &&
