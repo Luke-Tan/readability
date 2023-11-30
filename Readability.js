@@ -1193,9 +1193,9 @@ Readability.prototype = {
         )
           return;
 
-        // If this paragraph is less than 25 characters, don't even count it.
+        // If this paragraph is less than 15 characters, don't even count it.
         var innerText = this._getInnerText(elementToScore);
-        if (innerText.length < 25) return;
+        if (innerText.length < 15) return;
 
         // Exclude nodes with no ancestor.
         var ancestors = this._getNodeAncestors(elementToScore, 5);
@@ -2440,7 +2440,7 @@ Readability.prototype = {
           input > Math.floor(p / 3) ||
           (!isList &&
             headingDensity < 0.9 &&
-            contentLength < 25 &&
+            contentLength < 8 &&
             (img === 0 || img > 2) &&
             !this._hasAncestorTag(node, "figure")) ||
           (!isList && weight < 25 && linkDensity > 0.2) ||
