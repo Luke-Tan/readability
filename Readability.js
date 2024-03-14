@@ -1436,6 +1436,8 @@ Readability.prototype = {
             ) {
               append = true;
             }
+          } else if (sibling.innerHTML.includes("shopengine-product-price")) {
+            append = true;
           }
         }
 
