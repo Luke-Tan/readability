@@ -1380,8 +1380,8 @@ Readability.prototype = {
       if (isPaging) articleContent.id = "readability-content";
 
       var siblingScoreThreshold = Math.max(
-        2,
-        topCandidate.readability.contentScore * 0.2
+        1,
+        topCandidate.readability.contentScore * 0.1
       );
       // Keep potential top candidate's parent node to try to get text direction of it later.
       parentOfTopCandidate = topCandidate.parentNode;
