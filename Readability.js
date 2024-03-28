@@ -2371,6 +2371,13 @@ Readability.prototype = {
         return false;
       }
 
+      /* Consider checking for classname including "price" on all nodes somehow */
+      if (tag === "form") {
+        if (node.innerHTML.includes("price")) {
+          return false;
+        }
+      }
+
       // Next check if we're inside a data table, in which case don't remove it as well.
       if (this._hasAncestorTag(node, "table", -1, isDataTable)) {
         return false;
