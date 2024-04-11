@@ -62,6 +62,7 @@ function Readability(doc, options) {
     };
   this._disableJSONLD = !!options.disableJSONLD;
   this._allowedVideoRegex = options.allowedVideoRegex || this.REGEXPS.videos;
+  this._useBodyAsTopCandidate = options.useBodyAsTopCandidate;
 
   // Start with all flags set
   this._flags =
@@ -136,10 +137,10 @@ Readability.prototype = {
     // Readability-readerable.js. Please keep both copies in sync.
     unlikelyCandidates:
       /-ad-|ai2html|banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|footer|gdpr|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote/i,
-    okMaybeItsACandidate: /and|article|body|column|content|main|shadow/i,
+    okMaybeItsACandidate: /and|article|body|column|content|main|shadow|price/i,
 
     positive:
-      /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story|news/i,
+      /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story|news|price/i,
     negative:
       /-ad-|hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
     extraneous:
@@ -1193,9 +1194,9 @@ Readability.prototype = {
         )
           return;
 
-        // If this paragraph is less than 15 characters, don't even count it.
+        // If this paragraph is less than 7 characters, don't even count it.
         var innerText = this._getInnerText(elementToScore);
-        if (innerText.length < 15) return;
+        if (innerText.length < 7) return;
 
         // Exclude nodes with no ancestor.
         var ancestors = this._getNodeAncestors(elementToScore, 5);
@@ -1240,30 +1241,32 @@ Readability.prototype = {
       // After we've calculated scores, loop through all of the possible
       // candidate nodes we found and find the one with the highest score.
       var topCandidates = [];
-      for (var c = 0, cl = candidates.length; c < cl; c += 1) {
-        var candidate = candidates[c];
+      if (!this._useBodyAsTopCandidate) {
+        for (var c = 0, cl = candidates.length; c < cl; c += 1) {
+          var candidate = candidates[c];
 
-        // Scale the final candidates score based on link density. Good content
-        // should have a relatively small link density (5% or less) and be mostly
-        // unaffected by this operation.
-        var candidateScore =
-          candidate.readability.contentScore *
-          (1 - this._getLinkDensity(candidate));
-        candidate.readability.contentScore = candidateScore;
+          // Scale the final candidates score based on link density. Good content
+          // should have a relatively small link density (5% or less) and be mostly
+          // unaffected by this operation.
+          var candidateScore =
+            candidate.readability.contentScore *
+            (1 - this._getLinkDensity(candidate));
+          candidate.readability.contentScore = candidateScore;
 
-        this.log("Candidate:", candidate, "with score " + candidateScore);
+          this.log("Candidate:", candidate, "with score " + candidateScore);
 
-        for (var t = 0; t < this._nbTopCandidates; t++) {
-          var aTopCandidate = topCandidates[t];
+          for (var t = 0; t < this._nbTopCandidates; t++) {
+            var aTopCandidate = topCandidates[t];
 
-          if (
-            !aTopCandidate ||
-            candidateScore > aTopCandidate.readability.contentScore
-          ) {
-            topCandidates.splice(t, 0, candidate);
-            if (topCandidates.length > this._nbTopCandidates)
-              topCandidates.pop();
-            break;
+            if (
+              !aTopCandidate ||
+              candidateScore > aTopCandidate.readability.contentScore
+            ) {
+              topCandidates.splice(t, 0, candidate);
+              if (topCandidates.length > this._nbTopCandidates)
+                topCandidates.pop();
+              break;
+            }
           }
         }
       }
@@ -1274,7 +1277,11 @@ Readability.prototype = {
 
       // If we still have no top candidate, just use the body as a last resort.
       // We also have to copy the body node so it is something we can modify.
-      if (topCandidate === null || topCandidate.tagName === "BODY") {
+      if (
+        this._useBodyAsTopCandidate ||
+        topCandidate === null ||
+        topCandidate.tagName === "BODY"
+      ) {
         // Move all of the page's children into topCandidate
         topCandidate = doc.createElement("DIV");
         neededToCreateTopCandidate = true;
@@ -2336,6 +2343,21 @@ Readability.prototype = {
     return childrenLength / textLength;
   },
 
+  _containsPriceClassName: function (node) {
+    // Check if the node itself contains 'price' in the class name
+    if (
+      node.classList &&
+      Array.from(node.classList).some((className) =>
+        className.includes("price")
+      )
+    ) {
+      return true;
+    }
+
+    // Check if any children contain 'price' in the class name
+    return node.innerHTML.includes("price");
+  },
+
   /**
    * Clean an element of all tags of type "tag" if they look fishy.
    * "Fishy" is an algorithm based on content length, classnames, link density, number of images & embeds, etc.
@@ -2371,11 +2393,8 @@ Readability.prototype = {
         return false;
       }
 
-      /* Consider checking for classname including "price" on all nodes somehow */
-      if (tag === "form") {
-        if (node.innerHTML.includes("price")) {
-          return false;
-        }
+      if (this._containsPriceClassName(node)) {
+        return false;
       }
 
       // Next check if we're inside a data table, in which case don't remove it as well.
