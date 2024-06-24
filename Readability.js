@@ -2358,6 +2358,17 @@ Readability.prototype = {
     return node.innerHTML.includes("price");
   },
 
+  _isNumber: function (str) {
+    if (!str) {
+      return false;
+    }
+    if (typeof str !== "string") {
+      return false;
+    }
+    const cleanedStr = str.replace(/,/g, "");
+    return !isNaN(parseFloat(cleanedStr)) && isFinite(cleanedStr);
+  },
+
   /**
    * Clean an element of all tags of type "tag" if they look fishy.
    * "Fishy" is an algorithm based on content length, classnames, link density, number of images & embeds, etc.
@@ -2460,7 +2471,8 @@ Readability.prototype = {
         }
 
         var linkDensity = this._getLinkDensity(node);
-        var contentLength = this._getInnerText(node).length;
+        var innerText = this._getInnerText(node);
+        var contentLength = innerText.length;
 
         var haveToRemove =
           (img > 1 && p / img < 0.5 && !this._hasAncestorTag(node, "figure")) ||
@@ -2469,6 +2481,7 @@ Readability.prototype = {
           (!isList &&
             headingDensity < 0.9 &&
             contentLength < 8 &&
+            !this._isNumber(innerText) &&
             (img === 0 || img > 2) &&
             !this._hasAncestorTag(node, "figure")) ||
           (!isList && weight < 25 && linkDensity > 0.2) ||
