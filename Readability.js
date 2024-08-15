@@ -2484,8 +2484,8 @@ Readability.prototype = {
             !this._isNumber(innerText) &&
             (img === 0 || img > 2) &&
             !this._hasAncestorTag(node, "figure")) ||
-          (!isList && weight < 25 && linkDensity > 0.2) ||
-          (weight >= 25 && linkDensity > 0.5) ||
+          (!isList && weight < 25 && linkDensity > 0.75) ||
+          (weight >= 25 && linkDensity > 1) ||
           (embedCount === 1 && contentLength < 75) ||
           embedCount > 1;
         // Allow simple lists of images to remain in pages
