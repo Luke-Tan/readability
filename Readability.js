@@ -549,10 +549,12 @@ Readability.prototype = {
         ) {
           var child = node.children[0];
           for (var i = 0; i < node.attributes.length; i++) {
-            child.setAttribute(
-              node.attributes[i].name,
-              node.attributes[i].value
-            );
+            const attrName = node.attributes[i].name;
+            if (/^[a-zA-Z_][\w-:.]*$/.test(attrName)) {
+              child.setAttribute(attrName, node.attributes[i].value);
+            } else {
+              this.log(`Skipping invalid attribute: ${attrName}`);
+            }
           }
           node.parentNode.replaceChild(child, node);
           node = child;
