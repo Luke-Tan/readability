@@ -1768,13 +1768,13 @@ Readability.prototype = {
 
     // get title
     metadata.title =
+      values["title"] ||
       jsonld.title ||
       values["dc:title"] ||
       values["dcterm:title"] ||
       values["og:title"] ||
       values["weibo:article:title"] ||
       values["weibo:webpage:title"] ||
-      values["title"] ||
       values["twitter:title"];
 
     if (!metadata.title) {
